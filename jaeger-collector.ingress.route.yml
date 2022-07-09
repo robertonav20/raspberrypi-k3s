@@ -1,0 +1,39 @@
+# IngressRoute Version
+
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: jaeger-collector-https
+  namespace: default
+spec:
+  tls:
+    stores:
+      default:
+        defaultCertificate:
+          certFile: path/to/cert.crt
+          keyFile: path/to/cert.key 
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`jaeger-collector.raspberry.home`)
+      kind: Rule
+      services:
+        - name: jaeger-collector
+          namespace: default
+          port: 14268
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: jaeger-collector-http
+  namespace: default
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`jaeger-collector.raspberry.home`)
+      kind: Rule
+      services:
+        - name: jaeger-collector
+          namespace: default
+          port: 14268

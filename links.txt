@@ -1,0 +1,9 @@
+https://quarkus.io/blog/quarkus-native-on-a-raspberry-pi/
+https://www.nevernull.io/blog/building-a-native-java-application-for-arm64-with-quarkus/
+https://gist.github.com/ricardozanini/fa65e485251913e1467837b1c5a8ed28
+https://docs.openstack.org/image-guide/convert-images.html
+https://www.cyberithub.com/resize-qcow2-image-with-virt-resize-kvm-tools/
+https://github.com/pramalin/quarkus-raspberry-pi/blob/master/index.md
+https://github.com/maxday/quarkus-native-distroless
+https://github.com/trevezani/k3s-raspberrypi4b8g
+https://hub.docker.com/r/arm64v8/adoptopenjdk

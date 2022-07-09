@@ -1,0 +1,20 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: kourier-ingress
+  namespace: kourier-system
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/rule-type: PathPrefix
+spec:
+  rules:
+    - host: '*.default.knative.raspberry.home'
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kourier-gateway
+                port:
+                  number: 8080

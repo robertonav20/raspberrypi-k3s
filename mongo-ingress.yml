@@ -1,0 +1,20 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: mongo
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/rule-type: PathPrefix
+spec:
+  rules:
+    - host: mongo.raspberry.home
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: mongo
+                port:
+                  number: 27017

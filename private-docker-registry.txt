@@ -1,0 +1,92 @@
+https://gabrieltanner.org/blog/docker-registry
+https://forum.hilscher.com/thread-291.html
+
+Create a folder certs on your RPi host and move to it. This folder is mapped later into the Registry Server container using the Docker "volume mapping" parameter allowing to mirror a host folder in a container when it is started. So this folder serves as storage for the needed keys and certicates for the container.
+$ mkdir -p /certs && cd /certs
+
+Generate a new key devdockerCA.key needed for your own "trusted" CA used as private key.
+$ openssl genrsa -out devdockerCA.key 2048
+
+Generate public certificate of your CA devdockerCA.pem derived from the private key. Adjust the following sample configuration "/C=IT/ST=registry ..." to your personal credentials. The devdockerCA.pem file made known on your RPi host lets it accept certificates signed by this CA, respectively the one reported by your Registry Server later.
+$ openssl req -x509 -new -nodes -key devdockerCA.key -days 10000 -out devdockerCA.pem -subj "/C=IT/ST=registry/L=registry/O=registry/OU=registry/CN=registry/emailAddress=roberto.nav20@gmail.com"
+
+For your Registry Server another key named domain.key needs to be generated that is used as public key and needs later to be signed by your CA.
+$ openssl genrsa -out domain.key 2048
+
+Create a configuration file req.conf with
+$ nano /certs/req.conf
+that necessary for a proper signing procedure. Copy the following content to it and tailored it to your credentials. Especially the CN parameter Common Name has to match your choosen RPi Hostname):
+
+[ req ]
+distinguished_name = req_distinguished_name
+req_extensions = v3_req
+prompt = no
+[ req_distinguished_name ]
+C = IT
+ST = registry
+L = registry
+O = registry
+OU = registry
+CN = registry
+emailAddress = roberto.nav20@gmail.com
+[ v3_req ]
+keyUsage = keyEncipherment, dataEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = @alt_names
+[ req_ext ]
+subjectAltName = @alt_names
+[ alt_names ]
+DNS.1 = registry
+DNS.2 = registry.raspberry.home
+DNS.3 = registry.raspberry.local
+IP.1 = 127.0.0.1
+
+Generate now a CSR (Certificate Signing Request) including the public Registry Server key intended to be signed by your CA.
+$ openssl req -new -key domain.key -out dev-docker-registry.com.csr -config req.conf
+
+Cross sign your Registry Server public key with the private CA merged with the CSR parameters and generate domain.crt file which is the final signed certificate of your Registry Server.
+$ openssl x509 -req -in dev-docker-registry.com.csr -CA devdockerCA.pem -CAkey devdockerCA.key -CAcreateserial -out domain.crt -days 10000 -extensions req_ext -extfile req.conf
+
+Let the public CA certificate become known on your RPi (else pushing to the Registry Server from the local RPi itself (later topic) will fail).
+$ mv devdockerCA.pem devdockerCA.crt
+$ mv devdockerCA.crt /etc/ssl/certs/
+$ cp /certs/domain.crt /usr/local/share/ca-certificates/domain.crt
+$ update-ca-certificates -v
+$ reboot now
+
+Or use this command
+sudo trust anchor --store domain.crt
+sudo trust anchor --store devdockerCA.crt
+sudo update-ca-trust
+sudo trust extract-compat
+
+OPTIONALLY 
+Create credentials under /home/pi/auth
+htpasswd -Bc registry.password registry
+Enter password
+
+user: admin
+password: raspberry
+
+Add this parameters to the follow command -v /home/pi/auth:/auth -e REGISTRY_AUTH=htpasswd -e REGISTRY_AUTH_HTPASSWD_REALM="Registry Realm" -e REGISTRY_AUTH_HTPASSWD_PATH=/auth/registry.password 
+
+Start the Registry as a container (certs folder is mapped to it)
+$ docker run -d --restart=always --name registry -v /certs:/certs -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key -p 5443:5000 registry:2
+
+Check if the Registry Server is running
+$ curl https://registry.raspberry.home:5443/v2/_catalog
+{"repositories":[]} -> returns empty list of repositories, which is fine.
+
+Add ssl certificate domain.crt into jvm keystore
+
+For testing docker registry follow the steps below
+
+Load a test image on your Registry:
+Pull a valid image from the Docker Hub internet registry on your RPi
+$ docker pull nginx:latest
+
+Tag the image with a name fitting to the name of your registry to prepare it for a push
+$ docker tag nginx:latest  registry.local/mytest:latest
+
+Push the tagged image to your registry
+$ docker push registry.raspberry.home/mytest:latest
