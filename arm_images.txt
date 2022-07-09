@@ -1,0 +1,4 @@
+Create buildx to force docker to create arm images
+1 - docker buildx create --name mybuilder
+2 - docker buildx use mybuilder
+3 - docker buildx build --platform linux/arm/v8 --load -f FILE_NAME -t TAG_NAME .
