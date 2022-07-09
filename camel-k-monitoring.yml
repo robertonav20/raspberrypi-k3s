@@ -1,0 +1,76 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: camel-k-monitor
+  labels:
+    app: camel-k
+spec:
+  selector:
+    matchLabels:
+      app: camel-k
+  endpoints:
+  - port: metrics
+    interval: 5s
+  - path: /q/metrics
+    port: metrics
+    interval: 5s
+---
+apiVersion: camel.apache.org/v1
+kind: IntegrationPlatform
+metadata:
+  name: camel-k
+spec:
+  traits:
+    prometheus:
+      configuration:
+        enabled: true
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: camel-k-operator-internal
+  labels:
+    app: camel-k
+    camel.apache.org/component: operator
+spec:
+  ports:
+    - name: metrics
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: camel-k
+    camel.apache.org/component: operator
+  type: ClusterIP
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: camel-k-integration-knative-event-producer-internal
+  labels:
+    app: camel-k
+spec:
+  ports:
+    - name: metrics
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+  selector:
+    camel.apache.org/integration: knative-event-producer
+  type: ClusterIP
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: camel-k-integration-knative-event-processor-internal
+  labels:
+    app: camel-k
+spec:
+  ports:
+    - name: metrics
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+  selector:
+    camel.apache.org/integration: knative-event-processor
+  type: ClusterIP
