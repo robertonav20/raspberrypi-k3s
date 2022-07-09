@@ -1,1 +1,1 @@
-kamel install --force --olm=false --build-publish-strategy=Buildah --registry ghcr.io/robertonav20 --registry-auth-username robertonav20 --registry-auth-password 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
+kamel install --force --olm=false --build-publish-strategy=Buildah --registry ghcr.io/robertonav20 --registry-auth-username robertonav20 --registry-auth-password password
